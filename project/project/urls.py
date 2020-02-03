@@ -24,5 +24,4 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
     path('api/register_request/', include('register_request.urls'), name='register-requeset'),
-    # path('api/login', include('login.urls'), name='login')
 ]
