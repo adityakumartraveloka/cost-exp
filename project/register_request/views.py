@@ -9,8 +9,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
 
-from .serializers import RegisterAccessRequestSerializer, AuthorisedUserSerializer
-from .models import RegisterAccessRequest, AuthorisedUser
+from .serializers import RegisterAccessRequestSerializer, AuthorisedUserSerializer, RequestHistorySerializer
+from .models import RegisterAccessRequest, AuthorisedUser, RequestHistory
 # Create your views here.
 
 
@@ -87,16 +87,22 @@ def registeraccessrequestupdate(request, id):
 def approverequest(request):
     if request.method == 'POST':
         data = json.loads(request.body)
+
         try:
             instance = RegisterAccessRequest.objects.get(email=data['email'])
         except RegisterAccessRequest.DoesNotExist:
             return JsonResponse({'err': 'Given request is not found'}, status=404)
         
         serializer = AuthorisedUserSerializer(data=data)
-        
+        history_serializer = RequestHistorySerializer(data=data)
         if serializer.is_valid():
-            serializer.save()
-            return JsonResponse({"msg": "Request has been approved", "data":serializer.data}, status=201)
+            if history_serializer.is_valid():
+                serializer.save()
+                history_serializer.save()
+                instance.delete()
+                return JsonResponse({"msg": "Request has been approved", "data":serializer.data}, status=201)
+            else:
+                return JsonResponse({"msg": 'There is a problem in histroy serializer'}, status=404)
         else:
             return JsonResponse({ "msg": "Request Not found"}, status=404)
 
@@ -107,8 +113,8 @@ def approverequestupdate(request, id):
         try:
             email_instance = AuthorisedUser.objects.get(id=id)
         except AuthorisedUser.DoesNotExist:
-            return JsonResponse({"msg": "Request is not found"})
-        
+            return JsonResponse({"msg": "Request is not found"}, status=404)
+
         email_instance.delete()
         return HttpResponse(status=204)
 

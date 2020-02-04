@@ -29,3 +29,9 @@ class AuthorisedUser(models.Model):
     email = models.EmailField(unique=True)
     product_domains = models.ManyToManyField(ProductDomain)
     status = models.BooleanField(default=False)
+
+
+class RequestHistory(models.Model):
+    email = models.EmailField()
+    product_domains = models.ManyToManyField(ProductDomain)
+    approved_date = models.DateTimeField(auto_now_add=True)

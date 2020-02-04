@@ -38,9 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+
     'register_request',
     'login',
-    'multiselectfield',
+    
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
