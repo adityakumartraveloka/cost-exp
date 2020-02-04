@@ -16,10 +16,16 @@ class RegisterAccessRequest(models.Model):
         ('Team Lead', 'Team Lead')
     ]
 
-    email = models.EmailField(blank=False)
-    designation = models.CharField(max_length=200, blank=True, choices=DESIGNATION)
+    email = models.EmailField(unique=True)
+    designation = models.CharField(max_length=200, choices=DESIGNATION)
     product_domains = models.ManyToManyField(ProductDomain)
     date_created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return (self.email)
+
+
+class AuthorisedUser(models.Model):
+    email = models.EmailField(unique=True)
+    product_domains = models.ManyToManyField(ProductDomain)
+    status = models.BooleanField(default=False)

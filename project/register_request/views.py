@@ -2,31 +2,18 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 from django.core.mail import send_mail
 from datetime import datetime
-
+import json
 
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
 
-from .serializers import RegisterAccessRequestSerializer
-from .models import RegisterAccessRequest
+from .serializers import RegisterAccessRequestSerializer, AuthorisedUserSerializer
+from .models import RegisterAccessRequest, AuthorisedUser
 # Create your views here.
 
 
-# class RegisterAccessResquestView(APIView):
-#     def get(self, request):
-#         queryset = RegisterAccessRequest.objects.all()
-#         serializer = RegisterAccessRequestSerializer(queryset, many=True)
-#         return Response(serializer.data)
-
-
-# def registeraccessrequestview(request):
-#     queryset = RegisterAccessRequest.objects.all()
-#     print(queryset)
-#     serializer = RegisterAccessRequestSerializer(queryset, many=True)
-
-#     return JsonResponse(serializer.data,safe=False)
 
 @api_view(['GET', 'POST'])
 @csrf_exempt
@@ -44,40 +31,28 @@ def registeraccessrequest(request):
         queryset = RegisterAccessRequest.objects.all()
         serializer = RegisterAccessRequestSerializer(queryset, many=True)
         return JsonResponse(serializer.data,safe=False)
+
     elif request.method == 'POST':
         print('[request.data]',request.data)
-        try:
-            instance = RegisterAccessRequest.objects.get(email=request.data['email'])
-            serializer = RegisterAccessRequestSerializer(instance, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return JsonResponse(serializer.data, status=200)
-            else:
-                return JsonResponse(serializer.errors, status=400)
+        serializer = RegisterAccessRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            # send_mail(subject_requester,
+            # msg_requester,
+            # sender_mail,
+            # [requester_mail],
+            # fail_silently=False)
 
-
-        except RegisterAccessRequest.DoesNotExist:            
-            serializer = RegisterAccessRequestSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                # send_mail(subject_requester,
-                # msg_requester,
-                # sender_mail,
-                # [requester_mail],
-                # fail_silently=False)
-
-                # send_mail(subject_admin,
-                # 'A new tickets',
-                # sender_mail,
-                # [admin_mail],
-                # fail_silently=False
-                # )
-                msg = 'Request has been created'
-                return JsonResponse(serializer.data, status=201)
-            else:
-                errors = serializer.errors
-                return JsonResponse(errors, status=400)
-
+            # send_mail(subject_admin,
+            # sender_mail,
+            # [admin_mail],
+            # fail_silently=False
+            # )
+            msg = 'Request has been created'
+            return JsonResponse(serializer.data, status=201)
+        else:
+            errors = serializer.errors
+            return JsonResponse(errors, status=400)
 
 
 
@@ -107,13 +82,33 @@ def registeraccessrequestupdate(request, id):
         return HttpResponse(status=204)
 
 
-# def approverequest(request, id):
-#     try:
-#         instance = RegisterAccessRequest.objects.get(id=id)
-#     except RegisterAccessRequest.DoesNotExist:
-#         return JsonResponse({ 'err': 'Request is not found'}, status=404)
 
-#     if request.method == 'POST':
+@csrf_exempt
+def approverequest(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        try:
+            instance = RegisterAccessRequest.objects.get(email=data['email'])
+        except RegisterAccessRequest.DoesNotExist:
+            return JsonResponse({'err': 'Given request is not found'}, status=404)
+        
+        serializer = AuthorisedUserSerializer(data=data)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse({"msg": "Request has been approved", "data":serializer.data}, status=201)
+        else:
+            return JsonResponse({ "msg": "Request Not found"}, status=404)
 
 
+@csrf_exempt
+def approverequestupdate(request, id):
+    if request.method == 'DELETE':
+        try:
+            email_instance = AuthorisedUser.objects.get(id=id)
+        except AuthorisedUser.DoesNotExist:
+            return JsonResponse({"msg": "Request is not found"})
+        
+        email_instance.delete()
+        return HttpResponse(status=204)
 

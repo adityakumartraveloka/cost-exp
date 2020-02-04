@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import RegisterAccessRequest, ProductDomain
+from .models import RegisterAccessRequest, ProductDomain, AuthorisedUser
 
 
 class ProductDomainSerializer(serializers.ModelSerializer):
@@ -22,9 +22,10 @@ class RegisterAccessRequestSerializer(serializers.ModelSerializer):
             'date_created',
             'product_domains'
         )
+
     
     def create(self, validated_data):
-        print('[serializers.py]',validated_data)
+        # print('[serializers.py]',validated_data)
         product_domains_data = validated_data.pop('product_domains')
         request_access = RegisterAccessRequest.objects.create(**validated_data)
 
@@ -32,6 +33,7 @@ class RegisterAccessRequestSerializer(serializers.ModelSerializer):
             product_domain, created = ProductDomain.objects.get_or_create(name=product_domain['name'])
             request_access.product_domains.add(product_domain)
         return request_access
+
 
     def update(self, instance, validated_data):
         product_domains_data = validated_data.pop('product_domains')
@@ -50,6 +52,45 @@ class RegisterAccessRequestSerializer(serializers.ModelSerializer):
         instance.product_domains.set(product_domain_list)
         instance.save()
         return instance
+        
 
     def __str__(self):
         return self.email
+
+
+class AuthorisedUserSerializer(serializers.ModelSerializer):
+    product_domains = ProductDomainSerializer(many=True)
+    class Meta:
+        model = AuthorisedUser
+        fields = (
+            'id',
+            'email',
+            'status',
+            'product_domains'
+        )
+
+
+    def create(self, validated_data):
+        product_domains_data = validated_data.pop('product_domains')
+        auth_user = AuthorisedUser.objects.create(**validated_data)
+
+        for product_domain in product_domains_data:
+            product_domain, created = ProductDomain.objects.get_or_create(name=product_domain['name'])
+            auth_user.product_domains.add(product_domain)
+
+        return auth_user
+
+
+    def update(self, instance, validated_data):
+        product_domains_data = validated_data.pop('product_domains')
+        instance.email = validated_data.get('email', instance.email)
+
+        product_domain_list = []
+
+        for product_domain in product_domains_data:
+            product_domain, created = ProductDomain.objects.get_or_create(name=product_domain['name'])
+            product_domain_list.append(product_domain)
+
+        instance.product_domains.set(product_domain_list)
+        instance.save()
+        return instance
