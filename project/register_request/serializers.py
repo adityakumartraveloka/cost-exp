@@ -43,7 +43,11 @@ class RegisterAccessRequestSerializer(serializers.ModelSerializer):
         for product_domain in product_domains_data:
             product_domain, created = ProductDomain.objects.get_or_create(name=product_domain['name'])
             product_domain_list.append(product_domain)
-        instance.product_domains.add(*product_domain_list)
+        
+        # print(product_domain_list)
+
+        # Can not assign directly, either use set or destructuring
+        instance.product_domains.set(product_domain_list)
         instance.save()
         return instance
 

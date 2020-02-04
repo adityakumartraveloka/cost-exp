@@ -30,7 +30,7 @@ from .models import RegisterAccessRequest
 
 @api_view(['GET', 'POST'])
 @csrf_exempt
-def registeracessrequest(request):
+def registeraccessrequest(request):
 
     sender_mail = 'scomrip@gmail.com'
     requester_mail = request.data['email']
@@ -81,45 +81,39 @@ def registeracessrequest(request):
 
 
 
-# @csrf_exempt
-# @api_view(['GET', 'PUT', 'DELETE'])
-# def registeracessrequestupdate(request, id):
+@csrf_exempt
+@api_view(['GET', 'PUT', 'DELETE'])
+def registeraccessrequestupdate(request, id):
+    try:
+        instance = RegisterAccessRequest.objects.get(id=id)
+        print('[instance] views.py', instance)
+    except RegisterAccessRequest.DoesNotExist:
+        return JsonResponse({'err': 'Given request is not found'}, status=404)
+
+    if request.method == 'GET':
+        serializer = RegisterAccessRequestSerializer(instance)
+        return JsonResponse(serializer.data)
+    
+    if request.method == 'PUT':
+        serializer = RegisterAccessRequestSerializer(instance, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=200)
+        else:
+            return JsonResponse(serializer.errors, status=400)
+    
+    elif request.method == 'DELETE':
+        instance.delete()
+        return HttpResponse(status=204)
+
+
+# def approverequest(request, id):
 #     try:
 #         instance = RegisterAccessRequest.objects.get(id=id)
-#         print('[instance] views.py', instance)
 #     except RegisterAccessRequest.DoesNotExist:
-#         return JsonResponse({'err': 'Given request is not found'}, status=404)
+#         return JsonResponse({ 'err': 'Request is not found'}, status=404)
 
-#     if request.method == 'GET':
-#         # print(instance)
-#         # data = RegisterAccessRequest.objects.get(email=instance)
-#         # print(data)
-#         serializer = RegisterAccessRequestSerializer(instance)
-#         # print(serializer.data)
-#         # return JsonResponse({'msg': 'hello'})
-#         print(serializer.data)
-#         return JsonResponse(serializer.data)
-    
-#     if request.method == 'PUT':
-#         serializer = RegisterAccessRequestSerializer(instance, data=request.data)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return JsonResponse(serializer.data, status=200)
-#         else:
-#             return JsonResponse(serializer.errors, status=400)
-    
-#     elif request.method == 'DELETE':
-#         instance.delete()
-#         return HttpResponse(status=204)
-
-
-# # def approverequest(request, id):
-# #     try:
-# #         instance = RegisterAccessRequest.objects.get(id=id)
-# #     except RegisterAccessRequest.DoesNotExist:
-# #         return JsonResponse({ 'err': 'Request is not found'}, status=404)
-
-# #     if request.method == 'POST':
+#     if request.method == 'POST':
 
 
 
